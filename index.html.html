@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Focus Wheel</title>
+<style>
+  :root {
+    --bg: #faf8f3;
+    --card: #ffffff;
+    --ink: #2c2c2a;
+    --muted: #888780;
+    --line: #d3d1c7;
+    --accent: #993c1d;
+    --accent-light: #f5c4b3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 80px;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+  h1 {
+    font-size: 22px;
+    font-weight: normal;
+    text-align: center;
+    margin: 0 0 4px;
+    letter-spacing: 0.5px;
+  }
+  .quote {
+    text-align: center;
+    font-style: italic;
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 28px;
+    line-height: 1.5;
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  textarea, input[type=text] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 540px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+  .wheel-area {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto 24px;
+  }
+  svg { width: 100%; height: auto; display: block; }
+  .slice-box {
+    position: absolute;
+    width: 100px;
+    text-align: center;
+  }
+  .slice-box textarea {
+    width: 100%;
+    height: 78px;
+    font-size: 12px;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 4px 6px;
+    background: rgba(255,255,255,0.7);
+  }
+  .center-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .grid-box textarea { height: 90px; }
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 24px;
+  }
+  .spotify-wrap {
+    margin: 28px 0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  iframe { border: none; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Focus wheel</h1>
+  <p class="quote">"A belief is just a thought you keep thinking." — Abraham-Hicks</p>
+
+  <div class="panel two-col">
+    <div>
+      <label>The stuck thing</label>
+      <textarea rows="3" placeholder="What's true right now, the place I feel pinched"></textarea>
+    </div>
+    <div>
+      <label>How it feels when it's free</label>
+      <textarea rows="3" placeholder="What I'm reaching toward"></textarea>
+    </div>
+  </div>
+
+  <div class="wheel-area" id="wheelArea">
+    <!-- SVG and slice boxes injected by script -->
+  </div>
+
+  <div class="panel grid-box" id="gridPanel">
+    <label>Gridding</label>
+    <textarea rows="4" id="gridTextarea" placeholder="What settled, what wants to be written down before it goes. Who are you to live this freedom? Write the emotional words of how it feels to live this, breathe each one in."></textarea>
+  </div>
+
+  <div class="spotify-wrap">
+    <a href="https://www.youtube.com/watch?v=6AKklMjtK8M" target="_blank" rel="noopener noreferrer" style="display:block; text-align:center; padding:14px; border:1px solid var(--line); border-radius:10px; color:var(--accent); text-decoration:none; font-size:14px;">
+      Open clearing music on YouTube ↗
+    </a>
+  </div>
+
+  <p class="footer-note">Resets on refresh. Press enter or return in a slice to jump to the next one. The playlist above stays put no matter what.</p>
+
+</div>
+
+<script>
+(function() {
+  var wheelArea = document.getElementById('wheelArea');
+  var size = 560;
+  var cx = size / 2, cy = size / 2;
+  var rOuter = size / 2 - 10;
+  var rInner = 70;
+  var slices = 8;
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  var svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 " + size + " " + size);
+
+  function polar(cx, cy, r, angleDeg) {
+    var a = (angleDeg - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+  }
+
+  var anglePer = 360 / slices;
+
+  for (var i = 0; i < slices; i++) {
+    var startAngle = i * anglePer;
+    var endAngle = startAngle + anglePer;
+    var p1 = polar(cx, cy, rOuter, startAngle);
+    var p2 = polar(cx, cy, rOuter, endAngle);
+    var p3 = polar(cx, cy, rInner, endAngle);
+    var p4 = polar(cx, cy, rInner, startAngle);
+
+    var d = "M " + p1.x + " " + p1.y +
+            " A " + rOuter + " " + rOuter + " 0 0 1 " + p2.x + " " + p2.y +
+            " L " + p3.x + " " + p3.y +
+            " A " + rInner + " " + rInner + " 0 0 0 " + p4.x + " " + p4.y +
+            " Z";
+
+    var path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", d);
+    path.setAttribute("fill", i % 2 === 0 ? "#f5f1e8" : "#efe9da");
+    path.setAttribute("stroke", "#d3d1c7");
+    path.setAttribute("stroke-width", "1");
+    svg.appendChild(path);
+  }
+
+  var innerCircle = document.createElementNS(svgNS, "circle");
+  innerCircle.setAttribute("cx", cx);
+  innerCircle.setAttribute("cy", cy);
+  innerCircle.setAttribute("r", rInner);
+  innerCircle.setAttribute("fill", "#ffffff");
+  innerCircle.setAttribute("stroke", "#993c1d");
+  innerCircle.setAttribute("stroke-width", "1.5");
+  svg.appendChild(innerCircle);
+
+  wheelArea.appendChild(svg);
+
+  var centerLabel = document.createElement('div');
+  centerLabel.className = 'center-label';
+  centerLabel.id = 'centerLabel';
+  centerLabel.textContent = 'trust the feeling of relief and commit to the rising';
+  wheelArea.appendChild(centerLabel);
+
+  var textareas = [];
+  var midR = (rOuter + rInner) / 2 + 18;
+
+  for (var j = 0; j < slices; j++) {
+    var midAngle = j * anglePer + anglePer / 2;
+    var pos = polar(cx, cy, midR, midAngle);
+    var pct = (pos.x / size * 100) + '%';
+    var pctY = (pos.y / size * 100) + '%';
+
+    var box = document.createElement('div');
+    box.className = 'slice-box';
+    box.style.left = pct;
+    box.style.top = pctY;
+    box.style.transform = 'translate(-50%, -50%)';
+
+    var ta = document.createElement('textarea');
+    ta.placeholder = (j + 1).toString();
+    ta.setAttribute('data-index', j);
+    box.appendChild(ta);
+    wheelArea.appendChild(box);
+    textareas.push(ta);
+  }
+
+  textareas.forEach(function(ta, idx) {
+    ta.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var next = textareas[idx + 1];
+        if (next) {
+          next.focus();
+        } else {
+          var centerLabelEl = document.getElementById('centerLabel');
+          centerLabelEl.textContent = 'who are you to live this freedom? write the emotional words of how it feels to live this, breathe each one in.';
+          var gridTa = document.getElementById('gridTextarea');
+          if (gridTa) {
+            gridTa.focus();
+            gridTa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
